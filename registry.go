@@ -8,6 +8,8 @@ import "sync"
 // This is an interface so as to encourage other structs to implement
 // the Registry API as appropriate.
 type Registry interface {
+	// Set a prefix for each metric
+	SetPrefix(string)
 
 	// Call the given function for each registered metric.
 	Each(func(string, interface{}))
@@ -31,6 +33,7 @@ type Registry interface {
 // The standard implementation of a Registry is a mutex-protected map
 // of names to metrics.
 type StandardRegistry struct {
+	prefix  string
 	metrics map[string]interface{}
 	mutex   sync.Mutex
 }
@@ -38,6 +41,18 @@ type StandardRegistry struct {
 // Create a new registry.
 func NewRegistry() Registry {
 	return &StandardRegistry{metrics: make(map[string]interface{})}
+}
+
+func (r *StandardRegistry) SetPrefix(prefix string) {
+	r.prefix = prefix
+}
+
+func (r *StandardRegistry) getMetricName(name string) string {
+	if r.prefix == "" {
+		return name
+	}
+
+	return r.prefix + "." + name
 }
 
 // Call the given function for each registered metric.
@@ -51,7 +66,8 @@ func (r *StandardRegistry) Each(f func(string, interface{})) {
 func (r *StandardRegistry) Get(name string) interface{} {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	return r.metrics[name]
+	fullName := r.getMetricName(name)
+	return r.metrics[fullName]
 }
 
 // Gets an existing metric or creates and registers a new one. Threadsafe
@@ -59,10 +75,11 @@ func (r *StandardRegistry) Get(name string) interface{} {
 func (r *StandardRegistry) GetOrRegister(name string, i interface{}) interface{} {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	if metric, ok := r.metrics[name]; ok {
+	fullName := r.getMetricName(name)
+	if metric, ok := r.metrics[fullName]; ok {
 		return metric
 	}
-	r.register(name, i)
+	r.register(fullName, i)
 	return i
 }
 
@@ -70,7 +87,8 @@ func (r *StandardRegistry) GetOrRegister(name string, i interface{}) interface{}
 func (r *StandardRegistry) Register(name string, i interface{}) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	r.register(name, i)
+	fullName := r.getMetricName(name)
+	r.register(fullName, i)
 }
 
 // Run all registered healthchecks.
@@ -88,7 +106,8 @@ func (r *StandardRegistry) RunHealthchecks() {
 func (r *StandardRegistry) Unregister(name string) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	delete(r.metrics, name)
+	fullName := r.getMetricName(name)
+	delete(r.metrics, fullName)
 }
 
 func (r *StandardRegistry) register(name string, i interface{}) {
