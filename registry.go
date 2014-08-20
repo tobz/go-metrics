@@ -154,6 +154,10 @@ func (r *StandardRegistry) registered() map[string]interface{} {
 
 var DefaultRegistry Registry = NewRegistry()
 
+func SetPrefix(prefix string) {
+	DefaultRegistry.SetPrefix(prefix)
+}
+
 // Call the given function for each registered metric.
 func Each(f func(string, interface{})) {
 	DefaultRegistry.Each(f)
