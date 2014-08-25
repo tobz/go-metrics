@@ -2,7 +2,7 @@ package librato
 
 import (
 	"fmt"
-	"github.com/rcrowley/go-metrics"
+	"github.com/tobz/go-metrics"
 	"log"
 	"math"
 	"regexp"
