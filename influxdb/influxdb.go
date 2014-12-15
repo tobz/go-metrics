@@ -13,6 +13,7 @@ type Config struct {
 	Database string
 	Username string
 	Password string
+	IsSecure bool
 }
 
 func Influxdb(r metrics.Registry, d time.Duration, config *Config) {
@@ -21,6 +22,7 @@ func Influxdb(r metrics.Registry, d time.Duration, config *Config) {
 		Database: config.Database,
 		Username: config.Username,
 		Password: config.Password,
+		IsSecure: config.IsSecure,
 	})
 	if err != nil {
 		log.Println(err)
